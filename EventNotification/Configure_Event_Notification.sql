@@ -33,7 +33,25 @@ GO
 
 -- Adding Procedure
 ALTER QUEUE evnBlockProcessReport 
-with activation (status=on, procedure_name = spHandleBlockProcessReport,
+with activation (status=on, procedure_name = evnBlockProcessReport,
 max_queue_readers = 1, 
 execute as owner) 
 GO
+
+-- Create table
+CREATE TABLE [DBA_Management].[Tracking].[EVN_BlockProcessReports](
+    RowID int IDENTITY(1,1) NOT FOR REPLICATION PRIMARY KEY NOT NULL,
+    DatabaseID int NULL,
+    TransactionID bigint NULL,
+    EventSequence int NULL,
+    ObjectID int NULL,
+    IndexID int NULL,
+    TextData xml NULL,
+    Duration bigint NULL,
+    PostTime varchar NULL,
+    CollectionDate datetime NULL
+);
+
+ALTER TABLE [Tracking].[EVN_BlockProcessReports] ADD  DEFAULT (getdate()) FOR [CollectionDate]
+GO
+
