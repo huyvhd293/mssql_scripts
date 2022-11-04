@@ -1,9 +1,23 @@
+-- Configure Block Process Report threshold 
+USE DBA_Management;
+GO
+sp_configure 'show advanced options', 1 ;  
+GO  
+RECONFIGURE ;  
+GO  
+sp_configure 'blocked process threshold', 5 ;  
+GO  
+RECONFIGURE ;  
+GO  
+
+--== SETUP SERVICE BROKER ==--
+
 USE DBA_Management;
 GO
 
 -- Enable Service Broker 
-IF EXISTS (SELECT * FROM sys.databases WHERE name = 'USE DBA_Management' AND is_broker_enabled = 0) 
-	ALTER DATABASE DBNAME SET ENABLE_BROKER; 
+IF EXISTS (SELECT * FROM sys.databases WHERE name = 'DBA_Management' AND is_broker_enabled = 0) 
+	ALTER DATABASE DBA_Management SET ENABLE_BROKER; 
 GO
 
 -- Configure Trustworthy
@@ -33,7 +47,7 @@ END;
 GO
 
 -- Create ROUTE svcBlockProcessReport
-IF NOT EXISTS (SELECT * FROM sys.routes WHERE name = 'svcBlockProcessReport')
+IF NOT EXISTS (SELECT * FROM sys.routes WHERE name = 'RouteBlockProcessReport')
 BEGIN
     CREATE ROUTE RouteBlockProcessReport WITH SERVICE_NAME = 'svcBlockProcessReport', ADDRESS = 'LOCAL';
 END;
@@ -42,15 +56,20 @@ GO
 -- Create EVENT NOTIFICATION EventBlockProcessReport
 IF NOT EXISTS (SELECT 1 FROM sys.server_event_notifications WHERE name = 'EventBlockProcessReport')
 BEGIN
-    CREATE EVENT NOTIFICATION EventBlockProcessReport ON SERVER FOR BLOCKED_PROCESS_REPORT TO SERVICE 'svcBlockProcessReport', 'current database'
+    CREATE EVENT NOTIFICATION EventBlockProcessReport ON SERVER FOR BLOCKED_PROCESS_REPORT TO SERVICE 'svcBlockProcessReport', 'current database';
 END;
 GO
 
--- Adding Procedure
+-- Alter Queue Adding Procedure
 ALTER QUEUE QueueBlockProcessReport 
 with activation (status=ON, procedure_name = [Tracking].[usp_BlockProcessReport],
 max_queue_readers = 1, 
 execute as owner) 
+GO
+
+-- Create table ---
+
+USE DBA_Management;
 GO
 
 -- Create table [Tracking].[BlockProcessReports]
